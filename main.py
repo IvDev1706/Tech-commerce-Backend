@@ -1,13 +1,12 @@
 #imports para la aplicacion de api
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 #necesarios para motor de plantillas
 from fastapi.requests import Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 #middleware de cors
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import product
+from controllers import product, user
 #imports de bd
 from database.models import metadata
 from database.db_config import engine
@@ -46,4 +45,5 @@ def home(request:Request):
     return templates.TemplateResponse('index.html',{'request':request, 'title':'Tech commerse backend'})
 
 #añadir routers
+app.include_router(user.router)
 app.include_router(product.router)

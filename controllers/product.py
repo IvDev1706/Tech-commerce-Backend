@@ -1,37 +1,39 @@
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from fastapi.responses import JSONResponse
 from typing import List
 from models.http_models import Product, ProductCreate
 from database.models import product
 from database.transactions import getAll, get, getLike, create, modify, drop
+from .user import decode_tk
+from typing import Annotated
 
 #router de api
 router = APIRouter(prefix="/products", tags=["Products"])
 
 #rutas REST
 @router.get("/")
-def get_products()->List[Product]:
+def get_products(data: Annotated[dict, Depends(decode_tk)])->List[Product]:
     data = getAll(product)
-    return [Product.parse_obj(row) for row in data]
+    return [Product.model_validate(row) for row in data]
 
 @router.get("/{id}")
-def get_product(id: int = Path(gt=0))->Product:
+def get_product(data: Annotated[dict, Depends(decode_tk)] ,id: int = Path(gt=0))->Product:
     #buscar en bd
-    data = get(product, id)
+    data = get(product, "id", id)
     #verifircar exito
     if not data:
         raise HTTPException(status_code=404, detail="producto no encontrado")
     #regresar los datos
-    return Product.parse_obj(data)
+    return Product.model_validate(data)
 
 @router.get("/with/")
-def get_product_like(like:str = Query(min_length=3))->List[Product]:
+def get_product_like(data: Annotated[dict, Depends(decode_tk)], like:str = Query(min_length=3))->List[Product]:
     #buscar en bd
     data = getLike(product, like)
-    return [Product.parse_obj(p) for p in data]
+    return [Product.model_validate(p) for p in data]
 
 @router.post("/create")
-def create_product(prod:ProductCreate)->JSONResponse:
+def create_product(data: Annotated[dict, Depends(decode_tk)], prod:ProductCreate)->JSONResponse:
     #añadir el producto
     created = create(product, prod.model_dump())
     #mandar error
@@ -41,7 +43,7 @@ def create_product(prod:ProductCreate)->JSONResponse:
     return JSONResponse(status_code=201, content={"created":True, "msg":"el producto se ha creado"})
 
 @router.put("/update")
-def update_product(prod:Product)->JSONResponse:
+def update_product(data: Annotated[dict, Depends(decode_tk)], prod:Product)->JSONResponse:
     #modificar en bd
     updated = modify(product,prod.model_dump())
     #verificar exito
@@ -51,7 +53,7 @@ def update_product(prod:Product)->JSONResponse:
     return JSONResponse(status_code=202, content={"updated":True, "msg":"el producto se ha actualizado"})
 
 @router.delete("/delete/{id}")
-def delete_product(id:int = Path(gt=0))->JSONResponse:#con Path se validan parametros
+def delete_product(data: Annotated[dict, Depends(decode_tk)], id:int = Path(gt=0))->JSONResponse:#con Path se validan parametros
     #eliminar de la bd
     deleted = drop(product,id)
     #verificar exito

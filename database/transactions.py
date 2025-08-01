@@ -17,13 +17,13 @@ def getAll(table: Table)->list:
     finally:
         db.close()
         
-def get(table: Table, id: str | int)->dict | None:
+def get(table: Table, col: str, value: any)->dict | None:
     #manejo de error
     try:
         #obtener sesion de bd
         db = get_db()
         #obtener el statement
-        stmt = select(table).where(table.c.id == id)
+        stmt = select(table).where(table.c[col] == value)
         result = db.execute(stmt)
         row = result.fetchone()
         return dict(row._mapping) if row else None
