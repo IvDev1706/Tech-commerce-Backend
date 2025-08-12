@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
+from fastapi import APIRouter, HTTPException, Path, Query, Depends, Header
 from fastapi.responses import JSONResponse
 from typing import List
 from models.http_models import Product, ProductCreate
@@ -12,8 +12,8 @@ router = APIRouter(prefix="/products", tags=["Products"])
 
 #rutas REST
 @router.get("/")
-def get_products(data: Annotated[dict, Depends(decode_tk)])->List[Product]:
-    data = getAll(product)
+def get_products(page: int, data: Annotated[dict, Depends(decode_tk)])->List[Product]:
+    data = getAll(product, page)
     return [Product.model_validate(row) for row in data]
 
 @router.get("/{id}")

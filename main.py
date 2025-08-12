@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 #middleware de cors
 from fastapi.middleware.cors import CORSMiddleware
-from controllers import product, user
+from controllers import product, user, order
 #imports de bd
 from database.models import metadata
 from database.db_config import engine
@@ -47,3 +47,4 @@ def home(request:Request):
 #añadir routers
 app.include_router(user.router)
 app.include_router(product.router)
+app.include_router(order.router)

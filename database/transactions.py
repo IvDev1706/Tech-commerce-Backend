@@ -1,14 +1,29 @@
-from sqlalchemy import select, insert, update, delete, Table
+from sqlalchemy import select, insert, update, delete, Table, Column, Selectable
 from sqlalchemy.exc import SQLAlchemyError
 from .db_config import get_db
 
-def getAll(table: Table)->list:
+def getAll(table: Table, page: int = 0, size: int = 10)->list:
     #manejo de error
     try:
         #obtener sesion de bd
         db = get_db()
         #obtener el statement
-        stmt = select(table)
+        stmt = select(table).limit(size).offset(size*page)
+        result = db.execute(stmt)
+        rows = result.fetchall()
+        return [dict(row._mapping) for row in rows]
+    except SQLAlchemyError as e:
+        return []
+    finally:
+        db.close()
+
+def getBy(table: Table, col: str, val)->list:
+    #manejo de error
+    try:
+        #obtener sesion de bd
+        db = get_db()
+        #obtener el statement
+        stmt = select(table).where(table.c[col] == val)
         result = db.execute(stmt)
         rows = result.fetchall()
         return [dict(row._mapping) for row in rows]
@@ -17,7 +32,22 @@ def getAll(table: Table)->list:
     finally:
         db.close()
         
-def get(table: Table, col: str, value: any)->dict | None:
+def getJoin(joined:Selectable, where: Column, val)->list:
+    #manejo de error
+    try:
+        #obtener sesion de bd
+        db = get_db()
+        #statement
+        stmt = select(joined).where(where == val)
+        result = db.execute(stmt)
+        rows = result.fetchall()
+        return [dict(row._mapping) for row in rows]
+    except SQLAlchemyError as e:
+        return []
+    finally:
+        db.close()
+
+def get(table: Table, col: str, value)->dict | None:
     #manejo de error
     try:
         #obtener sesion de bd
@@ -47,19 +77,19 @@ def getLike(table: Table, like: str)->list:
     finally:
         db.close()
         
-def create(table: Table, data: dict)->bool:
+def create(table: Table, data: dict)->int | None:
     #manejo de error
     try:
         #obtener sesion de bd
         db = get_db()
         #obtener el statement
-        stmt = insert(table).values(data)
-        db.execute(stmt)
+        stmt = insert(table).values(data).returning(table.c.id)
+        result = db.execute(stmt)
         db.commit()
-        return True
+        return result.scalar()
     except SQLAlchemyError as e:
         print(e)
-        return False
+        return None
     finally:
         db.close()
         
