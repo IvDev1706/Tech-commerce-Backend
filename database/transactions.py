@@ -1,6 +1,18 @@
-from sqlalchemy import select, insert, update, delete, Table, Column, Selectable
+from sqlalchemy import select, insert, update, delete, func, Table, Column, Selectable
 from sqlalchemy.exc import SQLAlchemyError
 from .db_config import get_db
+
+def countAll(table: Table)->int:
+    #manejo de error
+    try:
+        #obtener sesion de bd
+        db = get_db()
+        #contar en base al id
+        return db.query(func.count(table.c["id"])).count()
+    except SQLAlchemyError as e:
+        return 0
+    finally:
+        db.close()
 
 def getAll(table: Table, page: int = 0, size: int = 10)->list:
     #manejo de error

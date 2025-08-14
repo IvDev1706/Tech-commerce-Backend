@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from typing import List
 from models.http_models import Product, ProductCreate
 from database.models import product
-from database.transactions import getAll, get, getLike, create, modify, drop
+from database.transactions import countAll, getAll, get, getLike, create, modify, drop
 from .user import decode_tk
 from typing import Annotated
 
@@ -12,9 +12,10 @@ router = APIRouter(prefix="/products", tags=["Products"])
 
 #rutas REST
 @router.get("/")
-def get_products(page: int, data: Annotated[dict, Depends(decode_tk)])->List[Product]:
+def get_products(page: int, data: Annotated[dict, Depends(decode_tk)])->JSONResponse:
     data = getAll(product, page)
-    return [Product.model_validate(row) for row in data]
+    total = (countAll(product) // 10) + 1 #total de paginas
+    return JSONResponse(status_code=200, content={"data": data, "page": page, "total": total})
 
 @router.get("/{id}")
 def get_product(data: Annotated[dict, Depends(decode_tk)] ,id: int = Path(gt=0))->Product:
